@@ -52,6 +52,7 @@ $Email_Subject = ""
 #VM host(s) parameters
 $VM_Host = @() 
 
+#Host Configration Parameters START
 $VM_Host += "" | Select Address,Protocol,Username,Password,All_Guests,Exclude_Guests,Include_Guests,Guests_SS_Name
 $VM_Host[$VM_Host.Count-1].Address = ""
 $VM_Host[$VM_Host.Count-1].Protocol = "https"
@@ -61,7 +62,7 @@ $VM_Host[$VM_Host.Count-1].All_Guests = 1
 $VM_Host[$VM_Host.Count-1].Exclude_Guests = ""
 $VM_Host[$VM_Host.Count-1].Include_Guests = ""
 $VM_Host[$VM_Host.Count-1].Guests_SS_Name = "BackupDR"
-
+#Host Configration Parameters END
 
 #**************************************************************       FUNCTIONS        **************************************************************
 
