@@ -241,7 +241,7 @@ $VM_Host | Foreach { #Host backup loop
 				#List all VM guests and add them to the VMGS array
 				$ALL_VMGS = get-vm  -ErrorAction Stop | Select Name
 				$VMGS = @()
-				foreach ($VM in $ALL_VMS) {
+				foreach ($VM in $ALL_VMGS) {
 					$VMGS += $VM.Name
 				}
 			}	
