@@ -122,7 +122,6 @@ $START_DATE = Get-Date
 #Create start the log
 try {
 	$LOG_FILE = $Destination_Path + "\VM_Guest_Backup_Log.txt"
-	$LOG_FILE = $LOG_FILE.Replace('\\','\')
 	[void](Start-Transcript -Path $LOG_FILE)
 }
 catch {
