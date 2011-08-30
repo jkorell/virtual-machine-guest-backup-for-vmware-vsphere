@@ -1,6 +1,6 @@
 # Virtual Machine Guest Backup for VMware vSphere
 # http://code.google.com/p/virtual-machine-guest-backup-for-vmware-vsphere/
-# Version 1.0B
+# Version 1.1
 #
 # Copyright 2011 Chris Gay
 # 
@@ -30,24 +30,28 @@
 # - VMware vSphere 4.1 Host (Paid Version)
 # - VMware vSphere PowerCLI 4.1 (http://www.vmware.com/support/developer/PowerCLI/index.html)
 # - PowerShell 2.0
+# - 7-Zip required to use compression
 #
 #
 # Change Log:
 # 28/06/2011 - Initial release, v1.0B
+# 30/08/2011 - Added file compression option using 7zip, v1.1
 
 
 
 #**************************************************************CONFIGURATION PARAMETERS**************************************************************
 
 #Please see ConfigurationParameters at http://code.google.com/p/virtual-machine-guest-backup-for-vmware-vsphere/
-$Destination_Path = ""
+$Destination_Path = "" 
+$Compress_Files = 0
+$7zip_Path = ""
 
 #Report email parameters
 $Email_Report = 1
 $Smtp_Server = ""
 $Email_From = ""
 $Email_To = ""
-$Email_Subject = ""
+$Email_Subject = "VMGB"
 
 #VM host(s) parameters
 $VM_Host = @() 
@@ -63,8 +67,13 @@ $VM_Host[$VM_Host.Count-1].Exclude_Guests = ""
 $VM_Host[$VM_Host.Count-1].Include_Guests = ""
 $VM_Host[$VM_Host.Count-1].Guests_SS_Name = "BackupDR"
 #Host Configration Parameters END
-
 #**************************************************************       FUNCTIONS        **************************************************************
+
+function create-7zip([String] $zSource, [String] $zZipfile){
+    [string]$pathToZipExe = $7zip_Path + "\7z.exe"
+    [Array]$arguments = "a", "-tzip", "$zZipfile", "$zSource"
+    [void](& $pathToZipExe $arguments)
+}
 
 function Email-Report ($CUSTOM_BODY) {
 	#Email the report if enabled
@@ -119,6 +128,25 @@ function Email-Report ($CUSTOM_BODY) {
 #Start transcription log
 $START_DATE = Get-Date
 
+#Clear the destination
+try {
+	[void](Remove-Item $Destination_Path -recurse)
+	[void](mkdir $Destination_Path)
+}
+catch {
+	$ERR = 1
+	"[" + (get-date -Format "dd/MM/yyyy hh:mm:ss tt") +  "] - (Error) " + $error[0].Exception.Message
+	""
+	""
+	"[" + (get-date -Format "dd/MM/yyyy hh:mm:ss tt") +  "] - Virtual Machine Guest Backup for VMware vSphere Aborted."
+	
+	#Send email report with custom body
+	Email-Report ("[" + (get-date -Format "dd/MM/yyyy hh:mm:ss tt") +  "] - (Error) " + $error[0].Exception.Message)
+	
+	#End script
+	break
+}
+
 #Create start the log
 try {
 	$LOG_FILE = $Destination_Path + "\VM_Guest_Backup_Log.txt"
@@ -161,8 +189,11 @@ catch {
 ""
 $START_DATE.ToShortDateString() + " " + $START_DATE.ToShortTimeString() + " - Virtual Machine Guest Backup for VMware vSphere Started"
 ""
+if($Compress_Files -eq 1) {
+"Note: File compression is enabled."
 ""
-
+}
+""
 #Initialize results array
 $VMHR = @() 
 
@@ -249,10 +280,9 @@ $VM_Host | Foreach { #Host backup loop
 				#Add VM guests entered in the include guests array to the VMGS array
 				$VMGS = $_.Include_Guests.split(',') 
 			}
-			
 			#Add VM guests to results
 			Foreach ($VMG in $VMGS) { 
-				if(!($VMH.Exclude_Guests.split(',') -contains $VM)) {
+				if(!($VMH.Exclude_Guests.split(',') -contains $VMG)) {
 					#VM guest is not in the exclude guests array, add VM guest to results
 					$VMHR[$VMHR.Count-1].Guests += "" | Select Name,Files,Start,Finish,Result
 					$VMHR[$VMHR.Count-1].Guests[$VMHR[$VMHR.Count-1].Guests.count-1].Name = $VMG
@@ -422,6 +452,17 @@ $VM_Host | Foreach { #Host backup loop
 						#Copy the file
 						Copy-DatastoreItem SRC:\$SFPN  -Destination DEST:\$DFPN -Force -ErrorAction Stop
 						
+						#Compress and remove file if the option is enabled
+						if($Compress_Files -eq 1) {
+							#Create zip and add current file
+							$ZSFPN = $Destination_Path + "\" + $DFPN
+							$ZFPN = $ZSFPN + ".zip"
+							create-7zip $ZSFPN $ZFPN
+							
+							#Delete current file
+							[void](Remove-Item $ZSFPN -Confirm:$False)
+						}
+						
 						#Remove Powershell Drive
 						[void](Remove-PSDrive -Name SRC)
 						
@@ -583,6 +624,9 @@ $VMGB_RES += "Total Running Time: " + ("{0:D2}" -f $TOTAL_TIME.Days) + ":" + ("{
 $VMGB_RES += "Total Data Backed Up: " + ("{0:N2}" -f ($TOTAL_SIZE / 1GB)) + " GB"
 $VMGB_RES += ""
 $VMGB_RES += "Backup Destination: " + $Destination_Path
+if($Compress_Files -eq 1) {
+	$VMGB_RES += "File Compression: Enabled"
+}
 $VMGB_RES 
 
 [void](Stop-Transcript)
