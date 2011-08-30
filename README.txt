@@ -27,6 +27,11 @@ Configuration Parameters:
 
 $Destination_Path 				- This is the location where the backup will be created. This should either be a local drive or a UNC path and must end without a backslash. E.g. \\server\share\VMGB
                             The backup will store the files at this location under Host Address\Datastore\Host Name. Eg "\\server\share\VMGB\192.168.4.1\ESX_LOCAL\VM Guest"
+                            Please Note: This folder must already exist before executing the script, the contents of this folder will be deleted upon executing the script.
+                            
+$Compress_Files           - This is used to enable or disable file compression. Use 1 to enable or 0 to disable. Please Note: This requires that 7-zip is installed on the computer running this script
+
+$7zip_Path                - This is the location of 7-zip. E.g. C:\Program Files\7zip
 
 $Email_Report					- This is used to enable or disable sending email reports. Use 1 to enable or 0 to disable.
 
