@@ -1,0 +1,1 @@
+Virtual Machine Guest Backup for VMware vSphere is a Windows Powershell script that uses the VMware vSphere PowerCLI snap-in to connect to VMware vSphere Hosts and/or VMware vCenter Servers and backup the virtual hard disk, configuration and snapshot files for VM Guests without powering them down.
